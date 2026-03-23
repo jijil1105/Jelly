@@ -1,0 +1,4 @@
+*.png filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
+Assets/Textures/ColorNoise.jpg filter=lfs diff=lfs merge=lfs -text
+Assets/Textures/jellyfishtexture.png filter=lfs diff=lfs merge=lfs -text
