@@ -1,4 +1,27 @@
-*.png filter=lfs diff=lfs merge=lfs -text
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+UserSettings/
+.DS_Store
+Thumbs.db
+.vscode/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.apk
+*.aab
+MemoryCaptures/
 *.jpg filter=lfs diff=lfs merge=lfs -text
-Assets/Textures/ColorNoise.jpg filter=lfs diff=lfs merge=lfs -text
-Assets/Textures/jellyfishtexture.png filter=lfs diff=lfs merge=lfs -text
+*.png filter=lfs diff=lfs merge=lfs -text
+*.fbx filter=lfs diff=lfs merge=lfs -text
+*.mp3 filter=lfs diff=lfs merge=lfs -text
+*.vfx filter=lfs diff=lfs merge=lfs -text
+Assets/Fonsts/NotoSansJP-Medium[[:space:]]SDF.asset filter=lfs diff=lfs merge=lfs -text
