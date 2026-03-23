@@ -1,0 +1,114 @@
+#pragma kernel CSMain
+
+#include "Common.hlsl"
+
+cbuffer CBuffer
+{
+    float _Time;
+    float _DeltaTime;
+    float _TimeScale;
+    float _ButterflyTrailSampleInterval;
+    float _SmoothFactor;
+    uint _BulletCount;
+    uint _TrailLength;
+    uint _MaxCount;
+}
+
+RWStructuredBuffer<JellyFishData> _jellyFishBuffer;
+RWStructuredBuffer<ButterflyData> _butterflyBuffer;
+RWStructuredBuffer<TrailPoint> _butterflyTrailBuffer;
+RWStructuredBuffer<BulletData> _bulletBuffers;
+
+#define PI 3.14159265
+#define PI2 (PI * 2.0)
+#define Speed 0.5
+#define Pers 0.5
+#define Lacu 1.5
+
+float2x2 rotate2D(float a)
+{
+    float c = cos(a);
+    float s = sin(a);
+    return float2x2(c, -s, s, c);
+}
+
+[numthreads(64, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    if (id.x >= _MaxCount)
+    {
+        return;
+    }
+    
+    float seed = index;
+    seed = rnd(seed);
+    float butterflyTime = (_Time / CyclicScale) * _TimeScale * 15.0 + rnd(seed);
+    
+    float3 butterflyOffsetPos = float3(rnd(seed), rnd(seed), rnd(seed));
+    float3 prebutterflyPos = cyclicNoise(butterflyTime - 0.01 + butterflyOffsetPos, Pers, Lacu);
+    float3 butterflyPos = cyclicNoise(butterflyTime + butterflyOffsetPos, Pers, Lacu);
+    float3 butterflyDir = normalize(butterflyPos - prebutterflyPos);
+    
+    _butterflyBuffer[index].butterflyPos = butterflyPos;
+    _butterflyBuffer[index].butterflyDir = lerp(_butterflyBuffer[index].butterflyDir, butterflyDir, _SmoothFactor);
+    _butterflyBuffer[index].butterflyColor = float3(rnd(seed), rnd(seed), rnd(seed));
+    _butterflyBuffer[index].size = 0.5 + smoothstep(0.0, 1.6, rnd(seed) + 0.6);
+    
+    _butterflyBuffer[index].trailAccum += _DeltaTime;
+    uint maxSamples = 8;
+    uint loopCount = 0;
+    float sampleInterval = max(0.001, _ButterflyTrailSampleInterval);
+    while (_butterflyBuffer[index].trailAccum >= sampleInterval && loopCount < maxSamples)
+    {
+        _butterflyBuffer[index].trailAccum -= sampleInterval;
+        uint butterflyIndex = index;
+        uint writeSlot = _butterflyBuffer[butterflyIndex].trailWriteIndex;
+        uint trailLen = max(1u, _TrailLength);
+        uint trailIndex = butterflyIndex * trailLen + writeSlot;
+    
+        TrailPoint tp;
+        tp.pos = butterflyPos;
+        tp.time = _Time;
+        _butterflyTrailBuffer[trailIndex] = tp;
+        writeSlot = (writeSlot + 1) % trailLen;
+        _butterflyBuffer[butterflyIndex].trailWriteIndex = writeSlot;
+        
+        loopCount++;
+    }
+    
+    if (_jellyFishBuffer[index].dead == 1)
+    {
+        return;
+    }
+    
+    float hitRadius = 1;
+    bool hit = false;
+    float sizeOffset = 0.5;
+    float jellyFishSize = rnd(seed) + sizeOffset;
+    jellyFishSize = pow(smoothstep(0.0, 1.0 + sizeOffset, jellyFishSize), 2.0) + sizeOffset;
+    for (uint i = 0; i < _BulletCount; i++)
+    {
+        float d = distance(_jellyFishBuffer[index].jellyFishPos, _bulletBuffers[i].position);
+        if (d < hitRadius * jellyFishSize)
+        {
+            _jellyFishBuffer[index].dead = 1;
+            _jellyFishBuffer[index].jellyFishPos = float3(100, 100, 100);
+            _bulletBuffers[i].isHit = 1;
+            return;
+        }
+    }
+    
+    seed = rnd(seed);
+    float jellyFishTime = (_Time / CyclicScale) * _TimeScale * 5.0 + rnd(seed);
+    
+    float3 jellyFishOffsetPos = cyclicNoise(float3(rnd(seed), rnd(seed), rnd(seed)), Pers, Lacu);
+    float3 preJellyFishPos = cyclicNoise(jellyFishTime - 0.01 + jellyFishOffsetPos, Pers, Lacu);
+    float3 jellyFishPos = cyclicNoise(jellyFishTime + jellyFishOffsetPos, Pers, Lacu);
+    float3 jellyFishDir = normalize(jellyFishPos - preJellyFishPos);
+    
+    _jellyFishBuffer[index].jellyFishPos = jellyFishPos;
+    _jellyFishBuffer[index].jellyFishDir = lerp(_jellyFishBuffer[index].jellyFishDir, jellyFishDir, _SmoothFactor);
+    _jellyFishBuffer[index].jellyFishColor = float3(rnd(seed), rnd(seed), rnd(seed));
+    _jellyFishBuffer[index].size = jellyFishSize;
+}

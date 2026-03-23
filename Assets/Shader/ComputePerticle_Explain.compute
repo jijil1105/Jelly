@@ -1,0 +1,124 @@
+/*
+#pragma kernel CSMain
+
+#include "Common.hlsl"
+
+cbuffer CBuffer
+{
+    float _Time;
+    float _DeltaTime;
+    float _TimeScale;
+    float _ButterflyTrailSampleInterval;
+    uint _BulletCount;
+    uint _TrailLength;
+    uint _MaxCount;
+}
+
+RWStructuredBuffer<JellyFishData> _jellyFishBuffer;
+RWStructuredBuffer<ButterflyData> _butterflyBuffer;
+RWStructuredBuffer<TrailPoint> _butterflyTrailBuffer;
+RWStructuredBuffer<BulletData> _bulletBuffers;
+
+#define PI 3.14159265
+#define PI2 (PI * 2.0)
+#define Speed 0.5
+#define Pers 0.5
+#define Lacu 1.5
+
+float2x2 rotate2D(float a)
+{
+    float c = cos(a);
+    float s = sin(a);
+    return float2x2(c, -s, s, c);
+}
+
+[numthreads(64, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    if (id.x >= _MaxCount)
+    {
+        return;
+    }
+    
+    float seed = index;
+    seed = rnd(seed);
+    
+    // 蝶のアニメーションに使う時間
+    float butterflyTime = (_Time / CyclicScale) * _TimeScale * 15.0 + rnd(seed);
+    // 蝶の初期座標オフセット値
+    float3 butterflyOffsetPos = float3(rnd(seed), rnd(seed), rnd(seed));
+    // 0.0001秒前の蝶の座標
+    float3 prebutterflyPos = cyclicNoise(butterflyTime - 0.0001 + butterflyOffsetPos, Pers, Lacu);
+    // 現在の蝶の座標
+    float3 butterflyPos = cyclicNoise(butterflyTime + butterflyOffsetPos, Pers, Lacu);
+    // 蝶の進行方向
+    float3 butterflyDir = normalize(butterflyPos - prebutterflyPos);
+    
+    _butterflyBuffer[index].butterflyPos = butterflyPos;
+    _butterflyBuffer[index].butterflyDir = butterflyDir;
+    _butterflyBuffer[index].butterflyColor = float3(rnd(seed), rnd(seed), rnd(seed));
+    _butterflyBuffer[index].size = 0.5 + smoothstep(0.0, 1.6, rnd(seed) + 0.6);
+    
+    _butterflyBuffer[index].trailAccum += _DeltaTime;
+    uint maxSamples = 8; // 無限ループ対策で8を上限にループさせる
+    uint loopCount = 0;
+    float sampleInterval = max(0.0001, _ButterflyTrailSampleInterval); // この時間間隔でトレイルのバッファに蝶の座標を記録する
+    while (_butterflyBuffer[index].trailAccum >= sampleInterval && loopCount < maxSamples)
+    {
+        _butterflyBuffer[index].trailAccum -= sampleInterval;
+        uint butterflyIndex = index;
+        uint writeSlot = _butterflyBuffer[butterflyIndex].trailWriteIndex; // ほかのシェーダーからtrailWriteIndex - 1で最新を蝶の座標を取得できるようにする
+        uint trailLen = max(1u, _TrailLength); // トレイルの長さ(サンプル数)
+        uint trailIndex = butterflyIndex * trailLen + writeSlot; // 蝶のインデックス毎に蝶の座標を連続で記録する
+    
+        TrailPoint tp;
+        tp.pos = butterflyPos;
+        tp.time = _Time;
+        _butterflyTrailBuffer[trailIndex] = tp; // 蝶の座標を記録
+        writeSlot = (writeSlot + 1) % trailLen; // 書き込み位置を更新
+        _butterflyBuffer[butterflyIndex].trailWriteIndex = writeSlot;
+        
+        loopCount++;
+    }
+    
+    // クラゲが死んでたら計算しない
+    if (_jellyFishBuffer[index].dead == 1)
+    {
+        return;
+    }
+    // 当たり判定の大きさ
+    float hitRadius = 1;
+    bool hit = false;
+    // クラゲ固有の大きさを考慮する
+    float sizeOffset = 0.5;
+    float jellyFishSize = rnd(seed) + sizeOffset;
+    jellyFishSize = pow(smoothstep(0.0, 1.0 + sizeOffset, jellyFishSize), 2.0) + sizeOffset;
+    // 当たったら死亡フラグを立てる
+    for (uint i = 0; i < _BulletCount; i++)
+    {
+        float d = distance(_jellyFishBuffer[index].jellyFishPos, _bulletBuffers[i].position);
+        if (d < hitRadius * jellyFishSize)
+        {
+            _jellyFishBuffer[index].dead = 1;
+            _jellyFishBuffer[index].jellyFishPos = float3(100, 100, 100);
+            _bulletBuffers[i].isHit = 1;
+            return;
+        }
+    }
+    
+    // クラゲの座標、進行方向を更新
+    seed = rnd(seed);
+    float jellyFishTime = (_Time / CyclicScale) * _TimeScale * 5.0 + rnd(seed);
+    
+    float3 jellyFishOffsetPos = cyclicNoise(float3(rnd(seed), rnd(seed), rnd(seed)), Pers, Lacu);
+    float3 preJellyFishPos = cyclicNoise(jellyFishTime - 0.001 + jellyFishOffsetPos, Pers, Lacu);
+    float3 jellyFishPos = cyclicNoise(jellyFishTime + jellyFishOffsetPos, Pers, Lacu);
+    float3 jellyFishDir = normalize(jellyFishPos - preJellyFishPos);
+    
+    _jellyFishBuffer[index].jellyFishPos = jellyFishPos;
+    _jellyFishBuffer[index].jellyFishDir = jellyFishDir;
+    _jellyFishBuffer[index].jellyFishColor = float3(rnd(seed), rnd(seed), rnd(seed));
+    _jellyFishBuffer[index].size = jellyFishSize;
+}
+*/

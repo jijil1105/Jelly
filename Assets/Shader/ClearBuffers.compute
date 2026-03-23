@@ -1,0 +1,62 @@
+#pragma kernel ClearBuffers
+#pragma kernel ClearTrailPoints
+
+#include "Common.hlsl"
+
+cbuffer CBuffer
+{
+    uint _TotalTrailPoints;
+    uint _InstanceCount;
+    uint _MaxBulletCount;
+}
+
+RWStructuredBuffer<ButterflyData> _butterflyBuffer;
+RWStructuredBuffer<TrailPoint> _butterflyTrailBuffer;
+RWStructuredBuffer<JellyFishData> _jellyFishBuffer;
+RWStructuredBuffer<BulletData> _bulletBuffers;
+
+[numthreads(64, 1, 1)]
+void ClearBuffers(uint3 id : SV_DispatchThreadID)
+{
+    uint idx = id.x;
+    if (idx < _InstanceCount)
+    {
+        ButterflyData zero;
+        zero.butterflyPos = float3(0, 0, 0);
+        zero.butterflyDir = float3(0, 0, 1);
+        zero.butterflyColor = float3(1, 1, 1);
+        zero.size = 1.0;
+        zero.trailWriteIndex = 0;
+        zero.trailAccum = 0.0;
+        _butterflyBuffer[idx] = zero;
+
+        JellyFishData jzero;
+        jzero.jellyFishPos = float3(0, 0, 0);
+        jzero.jellyFishDir = float3(0, 0, 1);
+        jzero.jellyFishColor = float3(1, 1, 1);
+        jzero.size = 1.0;
+        jzero.dead = 0;
+        _jellyFishBuffer[idx] = jzero;
+    }
+
+    if (idx < _MaxBulletCount)
+    {
+        BulletData bzero;
+        bzero.position = float3(0, 0, 0);
+        bzero.isHit = 0;
+        _bulletBuffers[idx] = bzero;
+    }
+}
+
+[numthreads(64, 1, 1)]
+void ClearTrailPoints(uint3 id : SV_DispatchThreadID)
+{
+    uint idx = id.x;
+    if (idx < _TotalTrailPoints)
+    {
+        TrailPoint tzero;
+        tzero.pos = float3(0, 0, 0);
+        tzero.time = 0.0;
+        _butterflyTrailBuffer[idx] = tzero;
+    }
+}
