@@ -138,7 +138,7 @@ Material:
     - _SwingStrength: 0.1
     - _TimeScale: 1
     - _TrailLength: 64
-    - _TrailWidth: 0.02
+    - _TrailWidth: 0.07
     - _VertexWaveFrequency: 3
     - _VertexWaveIntensity: 2.29
     - _VertexWavePow: 1.5

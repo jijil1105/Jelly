@@ -49,6 +49,26 @@ float3x3 CreateRotationMatrixY(float3 dir)
     return float3x3(x, y, z);
 }
 
+float3x3 CreateRotationMatrix_RightIsForward(float3 dir)
+{
+    float3 x = normalize(dir);
+    float3 up = abs(x.y) < 0.999 ? float3(0, 1, 0) : float3(0, 0, 1);
+    float3 z = normalize(cross(x, up));
+    float3 y = cross(z, x);
+    return float3x3(x, y, z);
+}
+
+
+float3x3 CreateRotationMatrix_LeftIsForward(float3 dir)
+{
+    float3 x = normalize(dir);
+    float3 up = abs(x.y) < 0.999 ? float3(0, 1, 0) : float3(0, 0, 1);
+    float3 z = normalize(cross(x, up));
+    float3 y = cross(z, x);
+    return float3x3(x, y, z);
+}
+
+
 float3 cyclicNoise(float3 p, float pers, float lacu)
 {
     float3 pos = p;

@@ -12,6 +12,8 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        Screen.fullScreenMode = FullScreenMode.FullScreenWindow;
+        Screen.fullScreen = true;
         Cursor.visible = false;
         _audioManager.Initialize();
         _playerController.Initialize();
