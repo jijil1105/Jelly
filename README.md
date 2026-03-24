@@ -205,3 +205,8 @@ https://scrapbox.io/0b5vr/Cyclic_Noise
         triStream.RestartStrip();
     }
 このジオメトリシェーダーは、頂点シェーダーから渡されたセグメント両端のワールド座標（A, B）、経過度（ageA, ageB）、蝶インデックスを受け取り、各セグメントを四角として展開してトレイルを描画します。各セグメントは幅を持つ帯として生成され、経過度に応じて幅や不透明度が変化します。
+Unity環境のコンピュートシェーダー、ジオメトリシェーダー、GPUInstancing周りはShitakamiさんのHatenaBlogやQiitaを読み漁って勉強していました。
+
+https://shitakami.hateblo.jp/about
+
+https://qiita.com/genkitoyama/items/262c5b9c489130eb877d?utm_source=copilot.com
