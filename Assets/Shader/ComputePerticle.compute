@@ -9,7 +9,6 @@ cbuffer CBuffer
     float _TimeScale;
     float _ButterflyTrailSampleInterval;
     float _SmoothFactor;
-    uint _BulletCount;
     uint _TrailLength;
     uint _MaxCount;
 }
@@ -17,7 +16,6 @@ cbuffer CBuffer
 RWStructuredBuffer<JellyFishData> _jellyFishBuffer;
 RWStructuredBuffer<ButterflyData> _butterflyBuffer;
 RWStructuredBuffer<TrailPoint> _butterflyTrailBuffer;
-RWStructuredBuffer<BulletData> _bulletBuffers;
 
 #define PI 3.14159265
 #define PI2 (PI * 2.0)
@@ -87,17 +85,6 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     float sizeOffset = 0.5;
     float jellyFishSize = rnd(seed) + sizeOffset;
     jellyFishSize = pow(smoothstep(0.0, 1.0 + sizeOffset, jellyFishSize), 2.0) + sizeOffset;
-    for (uint i = 0; i < _BulletCount; i++)
-    {
-        float d = distance(_jellyFishBuffer[index].jellyFishPos, _bulletBuffers[i].position);
-        if (d < hitRadius * jellyFishSize)
-        {
-            _jellyFishBuffer[index].dead = 1;
-            _jellyFishBuffer[index].jellyFishPos = float3(100, 100, 100);
-            _bulletBuffers[i].isHit = 1;
-            return;
-        }
-    }
     
     seed = rnd(seed);
     float jellyFishTime = (_Time / CyclicScale) * _TimeScale * 5.0 + rnd(seed);

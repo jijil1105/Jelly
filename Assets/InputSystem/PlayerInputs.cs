@@ -8,23 +8,35 @@ using System;
 /// </summary>
 public class PlayerInputs : MonoBehaviour
 {
-    private readonly Subject<Unit> _onAttackSubject = new();
-
-    /// <summary>
-    /// 左クリック時
-    /// </summary>
-    public IObservable<Unit> OnAttackObservable => _onAttackSubject.AsObservable();
+    public Vector2 Move { get; private set; }
     public Vector2 Look { get; private set; }
+    public bool IsSprint { get; private set; }
+    public bool IsJump;
+    /// <summary>
+    /// プレイヤー移動
+    /// </summary>
+    public void OnMove(InputValue value)
+    {
+        Debug.Log($"Move: {value.Get<Vector2>()}");
+        Move = value.Get<Vector2>();
+    }
 
     /// <summary>
     /// マウス移動
     /// </summary>
     public void OnLook(InputValue value)
     {
-        if(Time.time > Utility.StartTime)
-        {
-            Look = value.Get<Vector2>();
-        }
+        Look = value.Get<Vector2>();
+    }
+
+    public void OnSprint(InputValue value)
+    {
+        IsSprint = value.isPressed;
+    }
+
+    public void OnJump(InputValue value)
+    {
+        //IsJump = value.isPressed;
     }
 
     /// <summary>
@@ -32,14 +44,10 @@ public class PlayerInputs : MonoBehaviour
     /// </summary>
     public void OnAttack(InputValue value)
     {
-        if(value.isPressed)
-        {
-            _onAttackSubject.OnNext(Unit.Default);
-        }
     }
 
     private void OnDestroy()
     {
-        _onAttackSubject?.Dispose();
+
     }
 }

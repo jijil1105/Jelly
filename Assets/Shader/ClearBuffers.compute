@@ -7,13 +7,11 @@ cbuffer CBuffer
 {
     uint _TotalTrailPoints;
     uint _InstanceCount;
-    uint _MaxBulletCount;
 }
 
 RWStructuredBuffer<ButterflyData> _butterflyBuffer;
 RWStructuredBuffer<TrailPoint> _butterflyTrailBuffer;
 RWStructuredBuffer<JellyFishData> _jellyFishBuffer;
-RWStructuredBuffer<BulletData> _bulletBuffers;
 
 [numthreads(64, 1, 1)]
 void ClearBuffers(uint3 id : SV_DispatchThreadID)
@@ -37,14 +35,6 @@ void ClearBuffers(uint3 id : SV_DispatchThreadID)
         jzero.size = 1.0;
         jzero.dead = 0;
         _jellyFishBuffer[idx] = jzero;
-    }
-
-    if (idx < _MaxBulletCount)
-    {
-        BulletData bzero;
-        bzero.position = float3(0, 0, 0);
-        bzero.isHit = 0;
-        _bulletBuffers[idx] = bzero;
     }
 }
 

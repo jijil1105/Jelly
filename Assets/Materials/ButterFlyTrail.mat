@@ -119,7 +119,7 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _MaxButterfly: 1024
+    - _MaxButterfly: 512
     - _Metallic: 0
     - _Mix: 0.7
     - _OcclusionStrength: 1

@@ -44,14 +44,9 @@ public class ComputeBehavior : MonoBehaviour
     [Tooltip("spectrum の値にかけ合わせて調整する振幅係数")]
     [SerializeField] private float _amp = 1.0f;
 
-    [Header("エフェクト")]
-    [Tooltip("クラゲに弾が当たった時に出すエフェクトジェネレータ")]
-    [SerializeField] private FireFlowerGenerator _fireFlowerGenerator;
-
     // クラゲ、蝶、蝶の軌跡、弾のデータを保持するバッファ
     private GraphicsBuffer _jellyFishBuffer;
     private GraphicsBuffer _butterflyBuffer;
-    private GraphicsBuffer _bulletBuffers;
     private GraphicsBuffer _butterflyTrailBuffer;
 
     private int _kernel;
@@ -93,41 +88,25 @@ public class ComputeBehavior : MonoBehaviour
         public uint isHit;
     }
 
-    public void Initialize(int bulletMaxCount)
+    public void Initialize()
     {
         // コンピュートシェーダにセットするバッファを初期化
-        InitializeBuffer(bulletMaxCount);
+        InitializeBuffer();
         // バッファをクリア
-        ClearGpuBuffers(_instanceCount, _trailLength, bulletMaxCount);
+        ClearGpuBuffers(_instanceCount, _trailLength);
         // コンピュートシェーダーにバッファと定数をセット
         SetupComputeShader();
         // GPUインスタンシングに使うマテリアルにバッファと定数をセット
         SetupGpuInstancingMaterials();
 
-        _fireFlowerGenerator.Initialize();
         int segs = Mathf.Max(1, _trailLength - 1);
         _totalButterflyTrailVerts = _instanceCount * segs * _butterflyVertsPerSeg;
     }
 
-    public void OnUpdate(float[] getLogBands, Bullet[] activBullets)
+    public void OnUpdate(float[] getLogBands)
     {
         var spectrum = getLogBands[5] * _amp;
         _jellyFishMaterial.SetFloat("_Spectrum", spectrum);
-
-        // 発射されている弾のデータを作成
-        BulletData[] bulletDataArray = new BulletData[activBullets.Length];
-        for (int i = 0; i < activBullets.Length; i++)
-        {
-            bulletDataArray[i] = new BulletData
-            {
-                position = activBullets[i].transform.position,
-                isHit = 0
-            };
-        }
-
-        // 発射されている弾のデータをコンピュートシェーダーに渡す
-        _bulletBuffers.SetData(bulletDataArray);
-        _computeShader.SetInt("_BulletCount", activBullets.Length);
 
         // コンピュートシェーダーの時間を更新
         _computeShader.SetFloat("_Time", Time.time);
@@ -136,17 +115,6 @@ public class ComputeBehavior : MonoBehaviour
 
         // クラゲ、蝶の座標と回転、弾の当たり判定を計算
         _computeShader.Dispatch(_kernel, Mathf.CeilToInt(_instanceCount / 64.0f), 1, 1);
-
-        // 弾がクラゲに当たったらエフェクトを出して弾を返す
-        _bulletBuffers.GetData(bulletDataArray);
-        for (int i = 0; i < bulletDataArray.Length; i++)
-        {
-            if (bulletDataArray[i].isHit == 1)
-            {
-                _fireFlowerGenerator.Spawn(bulletDataArray[i].position, Mathf.Clamp01((float)(spectrum)));
-                activBullets[i].Return();
-            }
-        }
     }
 
     public void OnLateUpdate()
@@ -163,7 +131,7 @@ public class ComputeBehavior : MonoBehaviour
         Graphics.DrawProcedural(_butterflyTrailMaterial, bounds, MeshTopology.Points, _totalButterflyTrailVerts);
     }
 
-    private void InitializeBuffer(int bulletMaxCount)
+    private void InitializeBuffer()
     {
         // クラゲ用のバッファを作成
         int stride = Marshal.SizeOf(typeof(JellyFishData));
@@ -176,10 +144,6 @@ public class ComputeBehavior : MonoBehaviour
         // 蝶のトレイル用のバッファを作成
         stride = Marshal.SizeOf(typeof(TrailPoint));
         _butterflyTrailBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, _instanceCount * _trailLength, Marshal.SizeOf(typeof(TrailPoint)));
-
-        // 弾用のバッファを作成
-        stride = Marshal.SizeOf(typeof(BulletData));
-        _bulletBuffers = new GraphicsBuffer(GraphicsBuffer.Target.Structured, bulletMaxCount, stride);
     }
 
     private void SetupComputeShader()
@@ -189,7 +153,6 @@ public class ComputeBehavior : MonoBehaviour
         _computeShader.SetBuffer(_kernel, "_jellyFishBuffer", _jellyFishBuffer);
         _computeShader.SetBuffer(_kernel, "_butterflyBuffer", _butterflyBuffer);
         _computeShader.SetBuffer(_kernel, "_butterflyTrailBuffer", _butterflyTrailBuffer);
-        _computeShader.SetBuffer(_kernel, "_bulletBuffers", _bulletBuffers);
         _computeShader.SetInt("_TrailLength", _trailLength);
         _computeShader.SetInt("_MaxCount", _instanceCount);
         _computeShader.SetFloat("_ButterflyTrailSampleInterval", _butterflyTrailSampleInterval);
@@ -212,7 +175,7 @@ public class ComputeBehavior : MonoBehaviour
         _butterflyTrailMaterial.SetInt("_MaxButterfly", _instanceCount);
     }
 
-    void ClearGpuBuffers(int instanceCount, int trailLength, int maxBulletCount)
+    void ClearGpuBuffers(int instanceCount, int trailLength)
     {
         int clearKernel = _clearShader.FindKernel("ClearBuffers");
         int clearTrailKernel = _clearShader.FindKernel("ClearTrailPoints");
@@ -221,12 +184,10 @@ public class ComputeBehavior : MonoBehaviour
         int totalTrailPoints = instanceCount * trailLength;
         _clearShader.SetInt("_TotalTrailPoints", totalTrailPoints);
         _clearShader.SetInt("_InstanceCount", instanceCount);
-        _clearShader.SetInt("_MaxBulletCount", maxBulletCount);
 
         // バッファをセット
         _clearShader.SetBuffer(clearKernel, "_jellyFishBuffer", _jellyFishBuffer);
         _clearShader.SetBuffer(clearKernel, "_butterflyBuffer", _butterflyBuffer);
-        _clearShader.SetBuffer(clearKernel, "_bulletBuffers", _bulletBuffers);
         _clearShader.SetBuffer(clearTrailKernel, "_butterflyTrailBuffer", _butterflyTrailBuffer);
 
         int threads = 64;
@@ -242,7 +203,6 @@ public class ComputeBehavior : MonoBehaviour
     {
         _jellyFishBuffer?.Dispose();
         _butterflyBuffer?.Dispose();
-        _bulletBuffers?.Dispose();
         _butterflyTrailBuffer?.Dispose();
     }
 }

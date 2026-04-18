@@ -8,7 +8,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] private PlayerController _playerController;
     [SerializeField] private ComputeBehavior _computeBehavior;
     [SerializeField] private AudioManager _audioManager;
-    [SerializeField] private WaitUI _waitUI;
 
     void Start()
     {
@@ -17,29 +16,14 @@ public class GameManager : MonoBehaviour
         Cursor.visible = false;
         _audioManager.Initialize();
         _playerController.Initialize();
-        _computeBehavior.Initialize(_playerController.BulletPoolCount);
-        _waitUI.Initialized();
+        _computeBehavior.Initialize();
     }
 
     void Update()
     {
-        if(Time.time > Utility.EndTime)
-        {
-            Quit();
-        }
-
-        if (Time.time > Utility.StartTime)
-        {
-            _waitUI.SetVisible(false);
-        }
-        else 
-        {
-            _waitUI.OnUpdate();
-        }
-
         _audioManager.OnUpdate();
         _playerController.OnUpdate();
-        _computeBehavior.OnUpdate(_audioManager.GetLogBands(), _playerController.GetActiveBullets());
+        _computeBehavior.OnUpdate(_audioManager.GetLogBands());
     }
 
     void LateUpdate()
