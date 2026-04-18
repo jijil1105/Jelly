@@ -17,7 +17,6 @@ public class PlayerInputs : MonoBehaviour
     /// </summary>
     public void OnMove(InputValue value)
     {
-        Debug.Log($"Move: {value.Get<Vector2>()}");
         Move = value.Get<Vector2>();
     }
 

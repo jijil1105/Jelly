@@ -2,12 +2,15 @@
 using UnityEditor;
 #endif
 using UnityEngine;
+using UniRx;
 
 public class GameManager : MonoBehaviour
 {
     [SerializeField] private PlayerController _playerController;
     [SerializeField] private ComputeBehavior _computeBehavior;
     [SerializeField] private AudioManager _audioManager;
+    [SerializeField] private UIManager _uiManager;
+    [SerializeField] private EnterTrain _enterTrain;
 
     void Start()
     {
@@ -17,6 +20,10 @@ public class GameManager : MonoBehaviour
         _audioManager.Initialize();
         _playerController.Initialize();
         _computeBehavior.Initialize();
+        _uiManager.Initialize();
+        _enterTrain.Initialize();
+        
+        _enterTrain.OnEnterTrain.Subscribe(_ => _uiManager.SetVisibleEnterTrainUI(true)).AddTo(this);
     }
 
     void Update()
@@ -28,7 +35,7 @@ public class GameManager : MonoBehaviour
 
     void LateUpdate()
     {
-        _computeBehavior.OnLateUpdate();
+       _computeBehavior.OnLateUpdate();
     }
 
     private void Quit()

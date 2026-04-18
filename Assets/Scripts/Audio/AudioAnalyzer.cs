@@ -63,6 +63,8 @@ public class AudioAnalyzer
     /// </summary>
     public void UpdateSpectrum()
     {
+        _audioSource.GetSpectrumData(_spectrumData, 0, _fftWindow);
+        /*
         if (_audioSource.isPlaying)
         {
             _audioSource.GetSpectrumData(_spectrumData, 0, _fftWindow);
@@ -71,6 +73,7 @@ public class AudioAnalyzer
         {
             System.Array.Clear(_spectrumData, 0, _spectrumData.Length);
         }
+        */
     }
 
     /// <summary>

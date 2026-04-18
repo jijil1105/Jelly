@@ -14,14 +14,11 @@ public class AudioManager : MonoBehaviour
     public void Initialize()
     {
         _audioAnalyzer = new AudioAnalyzer(_audioSource, offset: 1);
+        _audioSource.Play();
     }
     
     public void OnUpdate()
     {
-        if(Time.time > Utility.StartTime && !_audioSource.isPlaying)
-        {
-            _audioSource.Play();
-        }
         _audioAnalyzer.UpdateSpectrum();
     }
 }
